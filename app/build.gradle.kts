@@ -15,8 +15,8 @@ android {
         applicationId = "de.felixnuesse.timedsilence2"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "3.1.3"
+        versionCode = 10
+        versionName = "3.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
