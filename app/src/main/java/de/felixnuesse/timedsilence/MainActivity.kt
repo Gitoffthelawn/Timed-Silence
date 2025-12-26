@@ -34,18 +34,24 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.PorterDuff
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.text.format.DateFormat
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.view.menu.MenuBuilder
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -69,6 +75,7 @@ import de.felixnuesse.timedsilence.handler.trigger.Trigger
 import de.felixnuesse.timedsilence.handler.volume.VolumeHandler
 import de.felixnuesse.timedsilence.services.`interface`.TimerInterface
 import de.felixnuesse.timedsilence.util.BluetoothUtil
+import de.felixnuesse.timedsilence.util.PermissionManager
 import de.felixnuesse.timedsilence.util.VibrationUtil
 import de.felixnuesse.timedsilence.volumestate.StateGenerator
 
@@ -100,6 +107,12 @@ class MainActivity : AppCompatActivity(), TimerInterface {
         setContentView(binding.root)
 
         setSupportActionBar(binding.toolbar)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
@@ -162,8 +175,51 @@ class MainActivity : AppCompatActivity(), TimerInterface {
         if (mDontCheckGraph) {
             mVolumeHandler.setVolumeStateAndApply(StateGenerator(this).stateAt(System.currentTimeMillis()))
         }
+
+        checkAndNotifyAboutMissingPermissions()
     }
 
+    private fun checkAndNotifyAboutMissingPermissions() {
+        val manager = PermissionManager(this.baseContext)
+        if(manager.hasAllPermissions()) {
+            return
+        }
+        val localContext = this.baseContext
+        val handler = Handler(Looper.getMainLooper())
+
+        val messages = arrayListOf("There are permissions missing:")
+
+        if(!manager.grantedNotifications()) {
+            messages.add("Missing: Notifications")
+        }
+        if(!manager.grantedBatteryOptimizationExemption()) {
+            messages.add("Missing: Battery Optimizations")
+        }
+        if(!manager.grantedContacts()) {
+            messages.add("Missing: Contacts")
+        }
+        // mandatory
+        if(!manager.grantedDoNotDisturb()) {
+            messages.add("Missing Mandatory: Do not Disturb")
+        }
+        if(!manager.grantedAlarms()) {
+            messages.add("Missing Mandatory: Alarms")
+        }
+        if(!manager.grantedUnusedAppPersistence()) {
+            messages.add("Missing Mandatory: Unused App")
+        }
+
+        var index = 0L
+        messages.forEach { it ->
+            handler.postDelayed(
+                {
+                    Toast.makeText(localContext, it, Toast.LENGTH_LONG).show()
+                },
+                index*3500
+            )
+            index++
+        }
+    }
 
     /**
      * This opens the CalendarFragment if the intent has the proper extras.

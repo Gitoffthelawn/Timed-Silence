@@ -19,6 +19,9 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
+import androidx.core.content.PackageManagerCompat
+import androidx.core.content.UnusedAppRestrictionsConstants.*
 import de.felixnuesse.timedsilence.Constants
 import de.felixnuesse.timedsilence.R
 import de.felixnuesse.timedsilence.ui.notifications.ErrorNotifications
@@ -41,17 +44,14 @@ class PermissionManager(private var mContext: Context) {
         if(!grantedAlarms()) {
             return false
         }
+        if(!grantedUnusedAppPersistence()) {
+            return false
+        }
         return true
     }
 
     fun hasAllPermissions(): Boolean {
-        if(!grantedDoNotDisturb()) {
-            return false
-        }
         if(!grantedNotifications()) {
-            return false
-        }
-        if(!grantedAlarms()) {
             return false
         }
         if(!grantedBatteryOptimizationExemption()) {
@@ -63,6 +63,25 @@ class PermissionManager(private var mContext: Context) {
         }
 
         return hasAllRequiredPermissions()
+    }
+
+    fun grantedUnusedAppPersistence(): Boolean {
+        return when(PackageManagerCompat.getUnusedAppRestrictionsStatus(mContext).get()) {
+            ERROR -> {
+                false // Since we cant retrieve it, assume the worst
+            }
+            DISABLED -> {
+                true
+            }
+            FEATURE_NOT_AVAILABLE -> {
+                false // Since we cant retrieve it, assume the worst
+            }
+            else -> {
+                // API_30, API_30_BACKPORT, API_31
+                // If this branch is choosen, autoreset is enabled
+                false
+            }
+        }
     }
 
     fun grantedDoNotDisturb(): Boolean {
@@ -127,6 +146,12 @@ class PermissionManager(private var mContext: Context) {
             Manifest.permission.READ_CONTACTS
         ) == PackageManager.PERMISSION_GRANTED
     }
+
+    fun requestUnusedAppPersistence() {
+        val intent = IntentCompat.createManageUnusedAppRestrictionsIntent(mContext, mContext.packageName)
+        mContext.startActivity(intent)
+    }
+
 
     fun requestDoNotDisturb() {
         val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
