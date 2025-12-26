@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "de.felixnuesse.timedsilence2"
+        applicationId = "de.felixnuesse.timedsilence"
         minSdk = 26
         targetSdk = 36
         versionCode = 10
