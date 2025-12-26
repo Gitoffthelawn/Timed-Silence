@@ -237,7 +237,8 @@ class VolumeHandler(private var mContext: Context, private var mInstanceContext:
 
         runBlocking {
             launch(Dispatchers.IO) {
-                LogDatabase.get(mContext).logEntryDao().createLogEntry(volumeState)
+                // todo: fix the log creation which is not unique
+                //LogDatabase.get(mContext).logEntryDao().createLogEntry(volumeState)
             }
         }
 
